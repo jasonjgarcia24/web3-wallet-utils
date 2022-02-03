@@ -1,0 +1,9 @@
+MNEMONIC = 'radar blur cabbage chef fix engine embark joy scheme fiction master release'
+
+ALCHEMY_RINKEBY_KEY = <key>
+ALCHEMY_KOVAN_KEY = <key>
+
+ALCHEMY_RINKEBY_URL = <url>/<key>
+ALCHEMY_KOVAN_URL = <url>/<key>
+
+ganache-cli -p <config.RPC_PORT.GANACHE> --chainId 1447 --mnemonic <mnemonic>

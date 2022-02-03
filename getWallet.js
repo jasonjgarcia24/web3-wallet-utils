@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' })
+require('dotenv').config({ path: '.env' })
 
 const { ethers, utils } = require('ethers');
 const { DEFAULT_NETWORK, RPC_PORT } = require('./config');
@@ -10,7 +10,7 @@ const ALCHEMY_API_KEY = () => process.env[`ALCHEMY_${NETWORK}_KEY`];
 const MNEMONIC = process.env.MNEMONIC;
 
 
-const getProvider = (network, addresses) => {
+const getProvider = (network, addresses, balance = '100') => {
     switch (network ? network.toUpperCase() : NETWORK) {
         case ('GANACHE'):
             const url = `http://127.0.0.1:${RPC_PORT.GANACHE}`;
@@ -19,7 +19,7 @@ const getProvider = (network, addresses) => {
             const accounts = addresses.map(address => {
                 return {
                     secretKey: Buffer.from(address, 'hex'),
-                    balance: utils.parseEther('100').toString(),
+                    balance: utils.parseEther(balance).toString(),
                 }
             })
             return new ethers.providers.Web3Provider(Ganache.provider({ accounts }));
@@ -29,18 +29,31 @@ const getProvider = (network, addresses) => {
     }
 }
 
-const getBIP44Wallet = async (network, numberOfWallets) => {
+const printKeyPairs = (wallet, balance) => {
+    console.log('Available Accounts\n==================');
+    wallet.forEach((_, i) => console.log(`(${i}) ${wallet[i].address} (${balance[i]} ETH)`))
+
+    console.log('\nPrivate Keys\n==================')
+    wallet.forEach((_, i) => console.log(`(${i}) ${wallet[i].privateKey}`))
+    console.log()
+}
+
+const getBIP44Wallet = async (network = NETWORK, numberOfWallets = 10, balance = '100') => {
+    NETWORK = network.toUpperCase();
+
     try {
         const path = (step) => `m/44'/60'/0'/0/${step}`;
         const wallet = [];
         const balances = [];
         let provider;
         let account;
-        let balance;
 
         for (let i = 0; i < numberOfWallets; i++) {
             account = Wallet.fromMnemonic(MNEMONIC, path(i));
-            provider = (provider) ? provider : getProvider(network, [account.privateKey.substring(2)]);
+
+            if (!provider) {
+                provider = getProvider(NETWORK, [account.privateKey.substring(2)], balance);
+            }
 
             account = new Wallet(account.privateKey, provider);
 
@@ -59,18 +72,9 @@ const getBIP44Wallet = async (network, numberOfWallets) => {
     }
 }
 
-const printKeyPairs = (wallet, balance) => {
-    console.log('Available Accounts\n==================');
-    wallet.forEach((_, i) => console.log(`(${i}) ${wallet[i].address} (${balance[i]} ETH)`))
-
-    console.log('\nPrivate Keys\n==================')
-    wallet.forEach((_, i) => console.log(`(${i}) ${wallet[i].privateKey}`))
-    console.log()
-}
-
-const getPrivateKeys = async (network, numberOfWallets = 10) => {
+const getPrivateKeys = async (network = NETWORK, numberOfWallets = 10) => {
     NETWORK = network.toUpperCase();
-    const [wallet, balance] = await getBIP44Wallet(network, numberOfWallets);
+    const [wallet, balance] = await getBIP44Wallet(NETWORK, numberOfWallets);
 
     printKeyPairs(wallet, balance);
 
@@ -80,9 +84,9 @@ const getPrivateKeys = async (network, numberOfWallets = 10) => {
     return privateKeys
 }
 
-const getKeyPairs = async (network, numberOfWallets = 10) => {
+const getKeyPairs = async (network = NETWORK, numberOfWallets = 10) => {
     NETWORK = network.toUpperCase();
-    const [wallet, balance] = await getBIP44Wallet(network, numberOfWallets);
+    const [wallet, balance] = await getBIP44Wallet(NETWORK, numberOfWallets);
 
     printKeyPairs(wallet, balance);
 
@@ -105,5 +109,5 @@ module.exports = {
     getProvider,
     getBIP44Wallet,
     getPrivateKeys,
-    getKeyPairs
+    getKeyPairs,
 };
