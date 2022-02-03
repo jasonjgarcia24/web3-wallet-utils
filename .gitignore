@@ -1,0 +1,7 @@
+dist
+.cache
+!.gitignore
+*.lock
+.env
+/node_modules
+/test
