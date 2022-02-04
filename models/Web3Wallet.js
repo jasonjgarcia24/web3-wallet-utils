@@ -17,12 +17,12 @@ const { DEFAULT_NETWORK, RPC_PORT } = require('../src/config');
 /**
  * Object containing Web3Wallet input parameters.
  * 
- * @typeof {Object} WalletParamsObj
+ * @typedef {Object} WalletParamsObj
  * @property {string} [mnemonic] The mnemonic to derive the wallet accounts from.
  * @property {string} [network] The Ethereum network.
  * @property {string} [rpcPort] The JSON-RPC node port.
  * @property {string} [balance] The balance(s) of the Ethereum account(s) derived from the 
- * [mnemonic](#mnemonic).
+ * mnemonic.
  * @property {number} [numberOfWallets] The number of accounts to make.
  */
 
@@ -53,7 +53,7 @@ class Web3Wallet {
     #bip44Wallet;
 
     /**
-     * @param {walletParamsObj} [walletParamsObj] The input parameter object for building the
+     * @param {WalletParamsObj} [walletParamsObj] The input parameter object for building the
      * Web3 wallet.
      */
     constructor(walletParamsObj = {
@@ -68,7 +68,7 @@ class Web3Wallet {
          * @property {string} [network] The Ethereum network.
          * @property {string} [rpcPort] The JSON-RPC node port.
          * @property {string} [balance] The balance(s) of the Ethereum account(s) derived
-         * from the [mnemonic](#mnemonic).
+         * from the mnemonic.
          * @property {number} [numberOfWallets] The number of accounts to make.
          * @property {JsonRpcProvider|Web3Provider|AlchemyProvider} [provider] The JSON-RPC
          * node provider.
@@ -88,6 +88,7 @@ class Web3Wallet {
 
     get mnemonic() { return this.#mnemonic; }
     get network() { return this.#network; }
+    get rpcPort() { return this.#rpcPort; }
     get balance() { return this.#balance; }
     get numberOfWallets() { return this.#numberOfWallets; }
     get provider() { return this.#provider; }
@@ -95,24 +96,25 @@ class Web3Wallet {
 
     set network(_network) {
         this.#network = _network;
-        this.#provider = null;
-        this.getBIP44Wallet();
+        this.#resetProvider();
     }
 
     set rpcPort(_rpcPort) {
         this.#rpcPort = _rpcPort;
-        this.#provider = null;
-        this.getBIP44Wallet();
+        this.#resetProvider();
     }
 
     set balance(_balance) {
         this.#balance = _balance;
-        this.#provider = null;
-        this.getBIP44Wallet();
+        this.#resetProvider();
     }
 
     set numberOfWallets(_numberOfWallets) {
         this.#numberOfWallets = _numberOfWallets;
+        this.#resetProvider();
+    }
+
+    #resetProvider() {
         this.#provider = null;
         this.getBIP44Wallet();
     }
@@ -128,34 +130,34 @@ class Web3Wallet {
      * @property {Function} setProvider Set a JSON-RPC node provider per the set
      * [network](#network).
      * @param {Array<string>} [addresses] Required for [network](#network)='GANACHE_CORE'. An
-     * array of addresses. The address(es) should be derived from [mnemonic](#mnemonic).
+     * array of addresses. The address(es) should be derived from the mnemonic.
      * @returns void
      */
     #setProvider = (addresses = []) => {
-        console.log(this.#network)
         switch (this.#network.toUpperCase()) {
             case ('GANACHE'):
                 const _url = `http://127.0.0.1:${this.#rpcPort}`;
                 this.#provider = new JsonRpcProvider(_url);
-                return
+                break;
             case ('GANACHE_CORE'):
                 if (addresses === []) {
                     this.#provider = null;
-                    return;
                 }
+                else {
+                    const _accounts = addresses.map(address => {
+                        return {
+                            secretKey: Buffer.from(address, 'hex'),
+                            balance: utils.parseEther(this.#balance).toString(),
+                        }
+                    })
 
-                const _accounts = addresses.map(address => {
-                    return {
-                        secretKey: Buffer.from(address, 'hex'),
-                        balance: utils.parseEther(this.#balance).toString(),
-                    }
-                })
-                this.#provider = new Web3Provider(Ganache.provider({ accounts: _accounts }));
-                return
+                    this.#provider = new Web3Provider(Ganache.provider({ accounts: _accounts }));
+                }
+                break;
             default:
                 const _key = this.#getAlchemyApiKey();
                 this.#provider = new AlchemyProvider(this.#network.toLowerCase(), _key);
-                return
+                break;
         }
     }
 
@@ -193,33 +195,35 @@ class Web3Wallet {
             for (let i = 0; i < this.#numberOfWallets; i++) {
                 _account = Wallet.fromMnemonic(this.#mnemonic, _path(i));
 
-                if (!this.#provider) {
-                    this.#setProvider(
-                        [_account.privateKey.substring(2)], this.#network, this.#balance
-                    );
-                }
+                this.#setProvider(
+                    [_account.privateKey.substring(2)], this.#network, this.#balance
+                );
 
                 _account = new Wallet(_account.privateKey, this.#provider);
 
+                _wallet.push(_account);
+            }
+
+            // Do this after just to be sure.
+            _wallet.forEach(async (w) => {
                 _balance = parseFloat(utils.formatEther(
-                    await _account.getBalance()
+                    await w.getBalance()
                 )).toString();
 
-                _wallet.push(_account);
                 _balances.push(_balance);
-            }
+            });
 
             this.#bip44Wallet = [_wallet, _balances];
         }
         catch (err) {
-            console.log(err);
+            console.log('ERROR: ', err);
             process.exit(1);
         }
     }
 
     /**
      * @property {Function} getPrivateKeys Get an array of the private keys derived from the 
-     * [mnemonic](#mnemonic).
+     * mnemonic.
      * @see getBIP44Wallet
      * @returns {Promise<Array.<string>>} privateKeys
      */
@@ -234,10 +238,10 @@ class Web3Wallet {
 
     /**
      * @property {Function} getKeyPairs Get the private/public key pairs derived from the 
-     * [mnemonic](#mnemonic). The number of key pairs returned will be set by numberOfWallets.
+     * mnemonic. The number of key pairs returned will be set by numberOfWallets.
      * @see getBIP44Wallet
      * @returns {Promise.<KeyPair>} keyPairs An array of arrays of both private and public  key 
-     * pairs derived from the [mnemonic](#mnemonic) using [getBIP44Wallet](#getBIP44Wallet).
+     * pairs derived from the mnemonic using [getBIP44Wallet](#getBIP44Wallet).
     */
     getKeyPairs = async () => {
         const [_wallet, _] = this.#bip44Wallet;

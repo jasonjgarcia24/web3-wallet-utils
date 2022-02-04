@@ -1,4 +1,0 @@
-/**
- * 
- */
-const studentName = "Flash Gordon";
