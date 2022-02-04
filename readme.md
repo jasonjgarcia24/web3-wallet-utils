@@ -14,16 +14,16 @@ A developing collection of Web3 wallet utilities.<br>
       
 ## Usage
 #### Printing Key Pairs:
-<img src="./img/printKeyPairs.png" alt="print key pairs"><br><br>
+<img src="./img/printKeyPairs.png" alt="print key pairs"><br>
 
 #### Printing Public Keys:
-<img src="./img/getPublicKeys.png" alt="print public keys"><br><br>
+<img src="./img/getPublicKeys.png" alt="print public keys"><br>
 
 #### Printing Private Keys:
-<img src="./img/getPrivateKeys.png" alt="print private keys"><br><br>
+<img src="./img/getPrivateKeys.png" alt="print private keys"><br>
 
 #### Web3Wallet.bip44Wallet:
-<img src="./img/myWallet_bip44Wallet.png" alt="Web3Wallet.bip44Wallet"><br><br>
+<img src="./img/myWallet_bip44Wallet.png" alt="Web3Wallet.bip44Wallet"><br>
 
 #### Web3Wallet.provider:
 <img src="./img/myWallet_provider.png" alt="Web3Wallet.provider">
