@@ -12,7 +12,7 @@ const { utils, Wallet, ethers:
     }
 } = require('ethers');
 
-const { DEFAULT_NETWORK, RPC_PORT } = require('../src/config');
+const { DEFAULT_NETWORK, RPC_PORT } = require('./config');
 
 /**
  * Object containing Web3Wallet input parameters.
