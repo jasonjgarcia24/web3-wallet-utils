@@ -1,0 +1,19 @@
+{
+  "name": "utils",
+  "version": "1.0.0",
+  "description": "",
+  "main": "getWallet.js",
+  "scripts": {
+    "doc": "jsdoc -c jsdoc.json"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^15.0.0",
+    "ganache-core": "^2.13.2",
+    "web3": "^1.7.0"
+  },
+  "devDependencies": {
+    "jsdoc": "^3.6.10"
+  }
+}
