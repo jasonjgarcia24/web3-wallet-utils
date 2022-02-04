@@ -1,0 +1,4 @@
+/**
+ * 
+ */
+const studentName = "Flash Gordon";
