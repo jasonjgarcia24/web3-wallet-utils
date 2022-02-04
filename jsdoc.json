@@ -1,8 +1,7 @@
 {
     "source": {
         "include": [
-            "src",
-            "models"
+            "src"
         ],
         "includePattern": ".js$",
         "excludePattern": "(node_modules/|docs)"
