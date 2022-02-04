@@ -36,7 +36,9 @@ const { DEFAULT_NETWORK, RPC_PORT } = require('../src/config');
 /**
  * A private/public key pair.
  * 
- * @typedef {Array.<Array.<string>, Array.<string>>} KeyPair
+ * @typedef {Object} KeyPair
+ * @property {Array.<string>} pubKeys The array of public keys in hex form.
+ * @property {Array.<string>} prvKeys The array of private keys in hex form.
  * @see {@link getKeyPairs}
  */
 
@@ -78,8 +80,8 @@ class Web3Wallet {
         this.#mnemonic = walletParamsObj?.mnemonic ? walletParamsObj.mnemonic : process.env.MNEMONIC;
         this.#network = walletParamsObj?.network ? walletParamsObj.network : DEFAULT_NETWORK;
         this.#rpcPort = walletParamsObj?.rpcPort ? walletParamsObj.rpcPort : RPC_PORT.GANACHE;
-        this.#balance = walletParamsObj?.balance ? walletParamsObj.balance : '100';
-        this.#numberOfWallets = walletParamsObj?.numberOfWallets ? walletParamsObj.numberOfWallets : 10;
+        this.#balance = walletParamsObj?.balance ? walletParamsObj.balance.toString() : '100';
+        this.#numberOfWallets = walletParamsObj?.numberOfWallets ? parseInt(walletParamsObj.numberOfWallets) : 10;
         this.#provider;
         this.#bip44Wallet;
 
@@ -105,7 +107,7 @@ class Web3Wallet {
     }
 
     set balance(_balance) {
-        this.#balance = _balance;
+        this.#balance = _balance.toString();
         this.#resetProvider();
     }
 
@@ -151,7 +153,9 @@ class Web3Wallet {
                         }
                     })
 
-                    this.#provider = new Web3Provider(Ganache.provider({ accounts: _accounts }));
+                    this.#provider = new Web3Provider(
+                        Ganache.provider({ accounts: _accounts, default_balance_ether: this.balance })
+                    );
                 }
                 break;
             default:
@@ -225,15 +229,30 @@ class Web3Wallet {
      * @property {Function} getPrivateKeys Get an array of the private keys derived from the 
      * mnemonic.
      * @see getBIP44Wallet
-     * @returns {Promise<Array.<string>>} privateKeys
+     * @returns {Promise<Array.<string>>} An array of the private keys.
      */
     getPrivateKeys = async () => {
         const [_wallet, _] = this.#bip44Wallet;
 
         const _privateKeys = [];
-        _wallet.forEach(_account => _privateKeys.push(_account.privateKey.substring(2)))
+        _wallet.forEach(_account => _privateKeys.push(_account.privateKey))
 
         return _privateKeys
+    }
+
+    /**
+     * @property {Function} getPublicKeys Get an array of the public keys derived from the 
+     * mnemonic.
+     * @see getBIP44Wallet
+     * @returns {Promise<Array.<string>>} An array of the public keys.
+    */
+    getPublicKeys = async () => {
+        const [_wallet, _] = this.#bip44Wallet;
+
+        const _publicKeys = [];
+        _wallet.forEach(_account => _publicKeys.push(_account.address))
+
+        return _publicKeys
     }
 
     /**
@@ -246,17 +265,15 @@ class Web3Wallet {
     getKeyPairs = async () => {
         const [_wallet, _] = this.#bip44Wallet;
 
-        const _keyPairs = [];
-        const _publicKeys = [];
-        const _privateKeys = [];
+        const _keyPairs = {
+            pubKeys: [],
+            prvKeys: []
+        };
 
         _wallet.forEach(_account => {
-            _publicKeys.push(_account.address);
-            _privateKeys.push(_account.privateKey.substring(2));
+            _keyPairs.pubKeys.push(_account.address);
+            _keyPairs.prvKeys.push(_account.privateKey);
         });
-
-        _keyPairs.push(_publicKeys);
-        _keyPairs.push(_privateKeys);
 
         return _keyPairs
     }
