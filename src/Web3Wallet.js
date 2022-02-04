@@ -154,7 +154,7 @@ class Web3Wallet {
                     })
 
                     this.#provider = new Web3Provider(
-                        Ganache.provider({ accounts: _accounts, default_balance_ether: this.balance })
+                        Ganache.provider({ accounts: _accounts, default_balance_ether: this.#balance })
                     );
                 }
                 break;
